@@ -1,4 +1,3 @@
-from sqlalchemy.orm import Session
 from app.db.database import engine, StudentModel, LocalSession
 
 class CRUD():
@@ -9,7 +8,7 @@ class CRUD():
         if average_score < 0 or average_score > 100:
             raise ValueError("Ошибка: средний балл должен находится в диапазоне от 0 до 100")
             
-        with LocalSession as session:
+        with LocalSession() as session:
             new_student = StudentModel(
                 name  = name,
                 group = group,
@@ -22,12 +21,20 @@ class CRUD():
             return new_student
         
     def read(self, student_id: int) -> StudentModel:
-        with LocalSession as session:
+        with LocalSession() as session:
             student = session.query(StudentModel).filter(StudentModel.id == student_id).first()
             if not student or not student.is_active:
                 raise ValueError(f"Ошибка: студент с ID {student_id} не найден или удален")
             
             return student
+        
+    def read_all(self, group_name: str = None) ->list[StudentModel]:
+        with LocalSession() as session:
+            search = session.query(StudentModel).filter(StudentModel.is_active == True)
+            if group_name:
+                search = search.filter(StudentModel.group == group_name)
+                
+            return search.all()
         
     def update(self, student_id: int, new_name: str = None, new_score: float = None) -> StudentModel:
         if new_name is not None:
@@ -38,7 +45,7 @@ class CRUD():
             if new_score < 0 or new_score > 100:
                 raise ValueError("Ошибка: новый балл должен быть находиться в диапазоне от 0 до 100")
         
-        with LocalSession as session:
+        with LocalSession() as session:
             student = session.query(StudentModel).filter(StudentModel.id == student_id).first()
             if not student or not student.is_active:
                 raise ValueError(f"Ошибка: студент с ID {student_id} не найден или удален")
@@ -52,7 +59,8 @@ class CRUD():
             return student
         
     def delete(self, student_id: int) -> str:
-        with LocalSession as session:
+        with LocalSession() as session:
+
             student = session.query(StudentModel).filter(StudentModel.id == student_id).first()
             if not student or not student.is_active:
                 raise ValueError(f"Ошибка: студент с ID {student_id} не найден или удален")
